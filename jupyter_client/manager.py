@@ -83,6 +83,7 @@ def in_pending_state(method: F) -> F:
         if self._attempted_start or not self._ready:
             self._ready = _get_future()
         try:
+            print(f"client.manager wrapper(), method={str(method)}", flush=True)
             # call wrapped method, await, and set the result or exception.
             out = await method(self, *args, **kwargs)
             # Add a small sleep to ensure tests can capture the state before done
@@ -302,6 +303,7 @@ class KernelManager(ConnectionFileMixin):
 
     def format_kernel_cmd(self, extra_arguments: t.Optional[t.List[str]] = None) -> t.List[str]:
         """Replace templated args (e.g. {connection_file})"""
+        self.log.info(f"format_kernel_cmd")
         extra_arguments = extra_arguments or []
         assert self.kernel_spec is not None
         cmd = self.kernel_spec.argv + extra_arguments
@@ -350,12 +352,16 @@ class KernelManager(ConnectionFileMixin):
         Note that provisioners can now be used to customize kernel environments
         and
         """
+        self.log.info(f"_async_launch_kernel: {kernel_cmd}")
         assert self.provisioner is not None
         connection_info = await self.provisioner.launch_kernel(kernel_cmd, **kw)
+        self.log.info("Starting kernel: %s", kernel_cmd)
+        self.log.info(f"connection_info: {connection_info}")
         assert self.provisioner.has_process
         # Provisioner provides the connection information.  Load into kernel manager
         # and write the connection file, if not already done.
         self._reconcile_connection_info(connection_info)
+        # TODO: read the file here.
 
     _launch_kernel = run_sync(_async_launch_kernel)
 
@@ -386,6 +392,7 @@ class KernelManager(ConnectionFileMixin):
              keyword arguments that are passed down to build the kernel_cmd
              and launching the kernel (e.g. Popen kwargs).
         """
+        self.log.info(f"client _async_pre_start_kernel")
         self.shutting_down = False
         self.kernel_id = self.kernel_id or kw.pop("kernel_id", str(uuid.uuid4()))
         # save kwargs for use in restart
@@ -435,7 +442,7 @@ class KernelManager(ConnectionFileMixin):
         kernel_cmd, kw = await self._async_pre_start_kernel(**kw)
 
         # launch the kernel subprocess
-        self.log.debug("Starting kernel: %s", kernel_cmd)
+        self.log.info("Starting kernel: %s", kernel_cmd)
         await self._async_launch_kernel(kernel_cmd, **kw)
         await self._async_post_start_kernel(**kw)
 

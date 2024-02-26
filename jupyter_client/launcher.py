@@ -9,7 +9,46 @@ from typing import Any, Dict, List, Optional
 
 from traitlets.log import get_logger
 
-
+def launch_proxy(
+    cmd: List[str],
+    cwd: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None,
+    **kw: Any,
+) -> Popen:
+    blackhole = open(os.devnull, "w")  # noqa
+    _stdin = PIPE
+    _stdout = blackhole
+    _stderr = blackhole
+    kwargs = kw.copy()
+    main_args = {
+        "stdin": _stdin,
+        "stdout": _stdout,
+        "stderr": _stderr,
+        "cwd": cwd,
+    }
+    kwargs.update(main_args)
+    try:
+        # Allow to use ~/ in the command or its arguments
+        cmd = [os.path.expanduser(s) for s in cmd]
+        proc = Popen(cmd, **kwargs)  # noqa
+    except Exception as ex:
+        try:
+            msg = "Failed to run command:\n{}\n    PATH={!r}\n    with kwargs:\n{!r}\n"
+            # exclude environment variables,
+            # which may contain access tokens and the like.
+            without_env = {key: value for key, value in kwargs.items() if key != "env"}
+            msg = msg.format(cmd, env.get("PATH", os.defpath), without_env)
+            get_logger().error(msg)
+        except Exception as ex2:  # Don't let a formatting/logger issue lead to the wrong exception
+            warnings.warn(f"Failed to run command: '{cmd}' due to exception: {ex}", stacklevel=2)
+            warnings.warn(
+                f"The following exception occurred handling the previous failure: {ex2}",
+                stacklevel=2,
+            )
+        raise ex
+    proc.stdin.close()
+    return proc
+    
 def launch_kernel(
     cmd: List[str],
     stdin: Optional[int] = None,
@@ -61,7 +100,7 @@ def launch_kernel(
     # place this one safe and always redirect.
     redirect_in = True
     _stdin = PIPE if stdin is None else stdin
-
+    
     # If this process in running on pythonw, we know that stdin, stdout, and
     # stderr are all invalid.
     redirect_out = sys.executable.endswith("pythonw.exe")
@@ -83,6 +122,10 @@ def launch_kernel(
         "env": env,
     }
     kwargs.update(main_args)
+    get_logger().info(f"launch_kernel: {cmd}")
+    with open(cmd[len(cmd)-1]) as f:
+        lines = f.readlines()
+        get_logger().info(f"lines: {lines}")
 
     # Spawn a kernel.
     if sys.platform == "win32":
@@ -183,4 +226,5 @@ def launch_kernel(
 
 __all__ = [
     "launch_kernel",
+    "launch_proxy"
 ]

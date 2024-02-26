@@ -86,6 +86,7 @@ class KernelProvisionerFactory(SingletonConfigurable):
         If the provisioner is found to not exist (not registered via entry_points),
         `ModuleNotFoundError` is raised.
         """
+        self.log.info(f"create_provisioner_instance with {kernel_spec.to_json()}")
         provisioner_cfg = self._get_provisioner_config(kernel_spec)
         provisioner_name = str(provisioner_cfg.get("provisioner_name"))
         if not self._check_availability(provisioner_name):

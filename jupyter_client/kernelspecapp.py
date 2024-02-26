@@ -43,6 +43,7 @@ class ListKernelSpecs(JupyterApp):
 
     def start(self) -> dict[str, t.Any] | None:  # type:ignore[override]
         """Start the application."""
+        print(f"start client.kernelspecapp application")
         paths = self.kernel_spec_manager.find_kernel_specs()
         specs = self.kernel_spec_manager.get_all_specs()
         if not self.json_output:

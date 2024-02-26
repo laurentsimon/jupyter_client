@@ -97,7 +97,7 @@ def write_connection_file(
         os.close(fd)
 
     # Find open ports as necessary.
-
+    
     ports: list[int] = []
     sockets: list[socket.socket] = []
     ports_needed = (
@@ -107,6 +107,7 @@ def write_connection_file(
         + int(control_port <= 0)
         + int(hb_port <= 0)
     )
+    
     if transport == "tcp":
         for _ in range(ports_needed):
             sock = socket.socket()
@@ -369,6 +370,11 @@ class ConnectionFileMixin(LoggingConfigurable):
     iopub_port = Integer(0, config=True, help="set the iopub (PUB) port [default: random]")
     stdin_port = Integer(0, config=True, help="set the stdin (ROUTER) port [default: random]")
     control_port = Integer(0, config=True, help="set the control (ROUTER) port [default: random]")
+    # hb_port = 8881
+    # shell_port = 8883
+    # iopub_port = 8882
+    # stdin_port = 8884
+    # control_port = 8880
 
     # names of the ports with random assignment
     _random_port_names: list[str] | None = None
@@ -496,7 +502,7 @@ class ConnectionFileMixin(LoggingConfigurable):
         """Write connection info to JSON dict in self.connection_file."""
         if self._connection_file_written and os.path.exists(self.connection_file):
             return
-
+        self.log.info(f"write_connection_file: {self.stdin_port}")
         self.connection_file, cfg = write_connection_file(
             self.connection_file,
             transport=self.transport,

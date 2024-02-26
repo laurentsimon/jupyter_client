@@ -267,7 +267,7 @@ class MultiKernelManager(LoggingConfigurable):
                 )
             )
         kwargs["kernel_id"] = kernel_id  # Make kernel_id available to manager and provisioner
-
+        self.log.info(f"client _async_start_kernel {kwargs}")
         starter = ensure_async(km.start_kernel(**kwargs))
         task = asyncio.create_task(self._add_kernel_when_ready(kernel_id, km, starter))
         self._pending_kernels[kernel_id] = task

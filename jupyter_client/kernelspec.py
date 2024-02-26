@@ -202,8 +202,10 @@ class KernelSpecManager(LoggingConfigurable):
     def find_kernel_specs(self) -> dict[str, str]:
         """Returns a dict mapping kernel names to resource directories."""
         d = {}
+        self.log.info(f"client kernelspec find_kernel_specs: {self.kernel_dirs}")
         for kernel_dir in self.kernel_dirs:
             kernels = _list_kernels_in(kernel_dir)
+            self.log.info(f"kernels: {kernels.items()}")
             for kname, spec in kernels.items():
                 if kname not in d:
                     self.log.debug("Found kernel %s in %s", kname, kernel_dir)
@@ -233,6 +235,7 @@ class KernelSpecManager(LoggingConfigurable):
         and resource_dir.
         """
         kspec = None
+        self.log.info(f"_get_kernel_spec_by_name: {kernel_name}, {resource_dir}")
         if kernel_name == NATIVE_KERNEL_NAME:
             try:
                 from ipykernel.kernelspec import RESOURCES, get_kernel_dict
@@ -248,7 +251,7 @@ class KernelSpecManager(LoggingConfigurable):
 
         if not KPF.instance(parent=self.parent).is_provisioner_available(kspec):
             raise NoSuchKernel(kernel_name)
-
+        self.log.info(f"kspec: {kspec.to_dict()}")
         return kspec
 
     def _find_spec_directory(self, kernel_name: str) -> str | None:
@@ -274,6 +277,7 @@ class KernelSpecManager(LoggingConfigurable):
 
         Raises :exc:`NoSuchKernel` if the given kernel name is not found.
         """
+        self.log.info(f"client.get_kernel_spec {kernel_name}")
         if not _is_valid_kernel_name(kernel_name):
             self.log.warning(
                 f"Kernelspec name {kernel_name} is invalid: {_kernel_name_description}"

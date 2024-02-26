@@ -33,6 +33,7 @@ class KernelApp(JupyterApp):
 
     def initialize(self, argv: t.Union[str, t.Sequence[str], None] = None) -> None:
         """Initialize the application."""
+        self.log.info("initialize: %r", argv)
         super().initialize(argv)
 
         cf_basename = "kernel-%s.json" % uuid.uuid4()
@@ -40,7 +41,7 @@ class KernelApp(JupyterApp):
             "connection_file", os.path.join(self.runtime_dir, cf_basename)
         )
         self.km = KernelManager(kernel_name=self.kernel_name, config=self.config)
-
+        self.log.info("cf_basename: %s", os.path.join(self.runtime_dir, cf_basename))
         self.loop = IOLoop.current()
         self.loop.add_callback(self._record_started)
 
