@@ -326,8 +326,19 @@ class LocalProvisioner(KernelProvisionerBase):  # type:ignore[misc]
         # In a prod solution, this functin would take care of launching the proxy then the kernel.
         # For local testing, we should create a LocalKernelProviioner and a LocalLineageProxyProvisioner
         # and re-factor the LocalProvisioner to manage both of them.
+
+        ## Launch the proxy.
         self.parent.log.info("PROXY::LAUNCH")
-        self.processes[self.PROXY] = launch_proxy(cmd = ["/bin/sleep", "15"], **scrubbed_kwargs)
+        proxy_cmd = ["~/slsa/ai/jupyter/code/jupyter-lineage/cli/proxy/proxy",
+               "0.0.0.0", str(self.connection_info["shell_port"]), str(self.connection_info["stdin_port"]),
+                str(self.connection_info["iopub_port"]), str(self.connection_info["control_port"]),
+                str(self.connection_info["hb_port"]),
+                # NOTE: use the ports configured via `ipython profile create <>`
+                # uner profile_<>'s ipython_kernel_config.py file.
+                "0.0.0.0", "8883", "8884", "8882", "8880", "8881",
+                os.path.join(os.getcwd(), "jupyter_repo")
+               ]
+        self.processes[self.PROXY] = launch_proxy(cmd = proxy_cmd, **scrubbed_kwargs)
         self.processes[self.KERNEL] = launch_kernel(cmd, **scrubbed_kwargs)
         self.parent.log.info(f"provisioner.launch_kernel, config: {self.connection_info}")
         pgid = None
